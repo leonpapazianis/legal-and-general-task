@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Discount, DiscountType } from './discount.entity';
 import { CartLineItem, CartSnapshot } from './cart-snapshot';
 import { DiscountLineItem, DiscountResult } from './discount-result';
@@ -10,7 +10,7 @@ export const DISCOUNT_STRATEGIES = 'DISCOUNT_STRATEGIES';
 export class DiscountEngineService {
   private readonly strategies: Map<DiscountType, IDiscountStrategy>;
 
-  constructor(strategies: IDiscountStrategy[]) {
+  constructor(@Inject(DISCOUNT_STRATEGIES) strategies: IDiscountStrategy[]) {
     this.strategies = new Map(strategies.map(s => [s.type, s]));
   }
 
