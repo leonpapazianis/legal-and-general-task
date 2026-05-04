@@ -13,27 +13,55 @@ Swagger UI is available at **http://localhost:3000/api**.
 
 ---
 
+## Diagrams
+
+### Onion Architecture
+
+![Onion Architecture](docs/onion-architecture.png)
+
+The system is organised as three concentric rings. Each ring may only depend on rings closer to the centre — never outward.
+
+| Ring | Contents | Framework dependency |
+|------|----------|----------------------|
+| **Domain Core** (inner) | `Cart`, `Product`, `Discount` aggregates; `IDiscountStrategy`; `DiscountEngineService`; `DomainError` | None — pure TypeScript |
+| **Application** (middle) | `CartService`, `CheckoutService`, `CartExpiryService`, `ProductsService`, `DiscountsService` | NestJS `@Injectable` only |
+| **Infrastructure** (outer) | HTTP controllers, in-memory repositories, `CartExpiryScheduler`, NestJS modules | NestJS, Express, `@nestjs/schedule` |
+
+Repository and strategy interfaces (ports) sit on the Domain/Application boundary. Concrete implementations (adapters) live in Infrastructure and are injected at runtime via NestJS DI tokens (`CART_REPOSITORY`, `DISCOUNT_STRATEGIES`, etc.).
+
+---
+
+### UML Class Diagram
+
+![UML Class Diagram](docs/uml-class-diagram.png)
+
+Key relationships:
+
+- **Cart** owns a collection of `CartItem` value objects (composition). All mutations go through the `Cart` aggregate — the `addItem`, `updateItemQuantity`, and `removeItem` methods enforce invariants and update `lastActivityAt`.
+- **Product** manages its own stock lifecycle (`reserve` / `release` / `commit`) and exposes `availableStock` as a computed getter (`stock - reserved`).
+- **IDiscountStrategy** is an interface with four concrete implementations. Each strategy declares its `type` and `level` (`product` or `cart`), allowing the engine to route discounts correctly.
+- **DiscountEngineService** holds a `Map<DiscountType, IDiscountStrategy>` and runs the two-pass calculation. It depends only on the strategy interface, never on concrete classes.
+- **CheckoutService** orchestrates across `CartService`, `ProductsService`, `DiscountsService`, and `DiscountEngineService` to complete a checkout atomically.
+
+---
+
+### Sequence Diagrams
+
+![Sequence Diagrams](docs/sequence-diagrams.png)
+
+Three key flows are shown:
+
+**① Add Item to Cart** — A `POST /carts/:id/items` request flows through the controller to `CartService`, which first fetches the product's name and price, then calls `ProductsService.reserve()` to decrement `availableStock`. Only on success does it call `cart.addItem()` and persist. A 422 is returned immediately if stock is insufficient.
+
+**② Checkout** — A `POST /carts/:id/checkout` request delegates to `CheckoutService`, which fetches all active discounts, runs the two-pass discount engine, then commits stock for each cart item (permanently decrementing `product.stock`). The cart status is set to `CHECKED_OUT` and a `CheckoutResult` with subtotal, discount breakdown, and final total is returned.
+
+**③ Cart Expiry (background)** — `CartExpiryScheduler` fires every 30 seconds via `@Interval`. `CartExpiryService.sweep()` loads all `ACTIVE` carts from the repository, filters those where `lastActivityAt` exceeds the 2-minute TTL, and calls `cartService.expireCart()` on each — releasing all stock reservations and marking the cart `EXPIRED`.
+
+---
+
 ## Architecture
 
-The solution follows **Onion Architecture** (Ports & Adapters) with three concentric layers:
-
-```
-Domain Core  →  Application  →  Infrastructure
-```
-
-- **Domain Core**: pure TypeScript classes and interfaces; no framework dependencies.
-  - `Product`, `Cart` aggregates with invariant enforcement; throw `DomainError` on violations.
-  - `Discount` entity with discriminated-union config type; validates per-type constraints at creation.
-  - `IDiscountStrategy` interface and four concrete strategy classes.
-  - `DiscountEngineService`: stateless two-pass orchestrator (no NestJS dependency).
-
-- **Application**: NestJS-injectable services that orchestrate use-cases.
-  - Maps `DomainError` to NestJS HTTP exceptions at this layer only — HTTP concerns never enter the domain.
-  - Repository interactions mediated through port interfaces (Symbols as injection tokens).
-
-- **Infrastructure**: NestJS modules, controllers, in-memory repositories, and the expiry scheduler.
-
-### Bounded contexts
+The solution follows **Onion Architecture** (Ports & Adapters) with three bounded contexts:
 
 | Context | Module | Responsibility |
 |---------|--------|----------------|
