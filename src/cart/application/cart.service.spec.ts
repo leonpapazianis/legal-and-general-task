@@ -84,7 +84,9 @@ describe('CartService', () => {
       const product = seedProduct(productsService, 10);
       const cart = cartService.createCart();
       cartService.addItem(cart.id, product.id, 1);
-      cartService.getCart(cart.id).markCheckedOut();
+      const liveCart = cartService.getCart(cart.id);
+      liveCart.markCheckedOut();
+      cartService.persistCart(liveCart);
       expect(() => cartService.addItem(cart.id, product.id, 1)).toThrow(ConflictException);
     });
   });

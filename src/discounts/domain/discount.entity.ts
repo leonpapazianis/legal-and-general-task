@@ -121,4 +121,16 @@ export class Discount {
     }
     this.updatedAt = new Date();
   }
+
+  clone(): Discount {
+    return Object.assign(Object.create(Discount.prototype) as Discount, {
+      id: this.id,
+      name: this.name,
+      type: this.type,
+      config: { ...this.config },
+      isActive: this.isActive,
+      createdAt: new Date(this.createdAt),
+      updatedAt: new Date(this.updatedAt),
+    });
+  }
 }

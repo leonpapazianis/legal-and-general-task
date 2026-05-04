@@ -83,4 +83,17 @@ export class Product {
     if (props.stock !== undefined) this.stock = props.stock;
     this.updatedAt = new Date();
   }
+
+  clone(): Product {
+    return Object.assign(Object.create(Product.prototype) as Product, {
+      id: this.id,
+      name: this.name,
+      description: this.description,
+      price: this.price,
+      stock: this.stock,
+      reserved: this.reserved,
+      createdAt: new Date(this.createdAt),
+      updatedAt: new Date(this.updatedAt),
+    });
+  }
 }

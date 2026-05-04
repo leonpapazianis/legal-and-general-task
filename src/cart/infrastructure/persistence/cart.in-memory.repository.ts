@@ -5,11 +5,11 @@ export class CartInMemoryRepository implements ICartRepository {
   private readonly store = new Map<string, Cart>();
 
   findById(id: string): Cart | undefined {
-    return this.store.get(id);
+    return this.store.get(id)?.clone();
   }
 
   findAll(): Cart[] {
-    return Array.from(this.store.values());
+    return Array.from(this.store.values()).map((c) => c.clone());
   }
 
   findByStatus(status: CartStatus): Cart[] {
@@ -17,7 +17,7 @@ export class CartInMemoryRepository implements ICartRepository {
   }
 
   save(cart: Cart): Cart {
-    this.store.set(cart.id, cart);
+    this.store.set(cart.id, cart.clone());
     return cart;
   }
 }
