@@ -1,5 +1,14 @@
 # Retail Shopping Cart API — Solution Notes
 
+---
+
+> # ⚠ REQUIREMENT: Node.js v24.15.0 (LTS)
+> **This project requires Node.js >= 24.15.0.**
+> Running on an older version is not supported and may produce unexpected behaviour.
+> Download the latest LTS from [nodejs.org](https://nodejs.org).
+
+---
+
 ## How to run
 
 ```bash
