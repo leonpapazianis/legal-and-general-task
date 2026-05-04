@@ -69,6 +69,10 @@ export class CartService {
     return this.repo.save(cart);
   }
 
+  persistCart(cart: Cart): Cart {
+    return this.repo.save(cart);
+  }
+
   expireCart(cartId: string): Cart {
     const cart = this.getCart(cartId);
     for (const item of cart.items) {

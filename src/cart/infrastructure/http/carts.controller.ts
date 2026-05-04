@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { CartService } from '../../application/cart.service';
+import { CheckoutService, CheckoutResult } from '../../application/checkout.service';
 import { AddItemDto } from './dto/add-item.dto';
 import { UpdateItemQuantityDto } from './dto/update-item-quantity.dto';
 import { HalResponse } from '../../../shared/infrastructure/hal/hal.types';
@@ -29,10 +30,20 @@ const toHal = (cart: Cart): HalResponse<ReturnType<typeof toView>> => {
   return { data: toView(cart), _links: links };
 };
 
+const checkoutToHal = (result: CheckoutResult): HalResponse<CheckoutResult> => ({
+  data: result,
+  _links: {
+    self: { href: `/carts/${result.cartId}`, method: 'GET' },
+  },
+});
+
 @ApiTags('carts')
 @Controller('carts')
 export class CartsController {
-  constructor(private readonly cartService: CartService) {}
+  constructor(
+    private readonly cartService: CartService,
+    private readonly checkoutService: CheckoutService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -86,5 +97,16 @@ export class CartsController {
   @ApiResponse({ status: 404, description: 'Cart not found or product not in cart' })
   removeItem(@Param('id') id: string, @Param('productId') productId: string) {
     this.cartService.removeItem(id, productId);
+  }
+
+  @Post(':id/checkout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Checkout an active cart' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Checkout successful' })
+  @ApiResponse({ status: 404, description: 'Cart not found' })
+  @ApiResponse({ status: 409, description: 'Cart is not active' })
+  checkoutCart(@Param('id') id: string) {
+    return checkoutToHal(this.checkoutService.checkout(id));
   }
 }
