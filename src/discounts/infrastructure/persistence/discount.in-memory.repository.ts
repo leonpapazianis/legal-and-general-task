@@ -13,7 +13,7 @@ export class DiscountInMemoryRepository implements IDiscountRepository {
   }
 
   findAllActive(): Discount[] {
-    return this.findAll().filter(d => d.isActive);
+    return this.findAll().filter((d) => d.isActive);
   }
 
   save(discount: Discount): Discount {

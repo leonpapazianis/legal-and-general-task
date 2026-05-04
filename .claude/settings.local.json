@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git branch *)",
+      "Bash(git commit -m 'chore\\(infra\\): scaffold onion architecture folder structure *)",
+      "Bash(git commit -m 'ci\\(config\\): add GitHub Actions workflow and README *)",
+      "Bash(git commit -m 'test\\(product\\): add unit tests for Product domain entity invariants *)",
+      "Bash(git commit -m 'feat\\(product\\): implement Product domain entity and IProductRepository port *)",
+      "Bash(git commit -m 'test\\(product\\): add ProductsService unit tests using real in-memory repository *)",
+      "Bash(git commit -m 'feat\\(product\\): implement ProductsService application service *)",
+      "Bash(git commit -m 'test\\(product\\): add E2E tests for all product HTTP endpoints *)",
+      "Bash(git commit -m 'feat\\(product\\): implement ProductsController, DTOs, module, and HAL response *)",
+      "Bash(git commit -m 'test\\(discount\\): add unit tests for Discount domain entity *)",
+      "Bash(git commit -m 'feat\\(discount\\): implement Discount domain entity and IDiscountRepository port *)",
+      "Bash(git commit -m 'feat\\(discount\\): define IDiscountStrategy interface and supporting value objects *)",
+      "Bash(git commit -m 'test\\(discount\\): add unit tests for all four discount strategies *)",
+      "Bash(git commit -m 'feat\\(discount\\): implement four discount strategy classes *)",
+      "Bash(npx jest *)"
+    ]
+  }
+}

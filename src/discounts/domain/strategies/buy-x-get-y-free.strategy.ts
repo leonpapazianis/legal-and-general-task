@@ -9,7 +9,7 @@ export class BuyXGetYFreeStrategy implements IDiscountStrategy {
 
   apply(snapshot: CartSnapshot, discount: Discount): DiscountLineItem[] {
     const config = discount.config as BuyXGetYFreeConfig;
-    const item = snapshot.items.find(i => i.productId === config.productId);
+    const item = snapshot.items.find((i) => i.productId === config.productId);
     if (!item) return [];
 
     const groupSize = config.buyQuantity + config.getFreeQuantity;
@@ -19,12 +19,14 @@ export class BuyXGetYFreeStrategy implements IDiscountStrategy {
     const freeUnits = groups * config.getFreeQuantity;
     const amountOff = parseFloat((freeUnits * item.unitPrice).toFixed(2));
 
-    return [{
-      discountId: discount.id,
-      discountName: discount.name,
-      productId: config.productId,
-      amountOff,
-      description: `Buy ${config.buyQuantity} get ${config.getFreeQuantity} free on ${item.productName} (${freeUnits} free)`,
-    }];
+    return [
+      {
+        discountId: discount.id,
+        discountName: discount.name,
+        productId: config.productId,
+        amountOff,
+        description: `Buy ${config.buyQuantity} get ${config.getFreeQuantity} free on ${item.productName} (${freeUnits} free)`,
+      },
+    ];
   }
 }

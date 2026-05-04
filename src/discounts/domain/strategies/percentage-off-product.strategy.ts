@@ -9,18 +9,20 @@ export class PercentageOffProductStrategy implements IDiscountStrategy {
 
   apply(snapshot: CartSnapshot, discount: Discount): DiscountLineItem[] {
     const config = discount.config as PercentageOffProductConfig;
-    const item = snapshot.items.find(i => i.productId === config.productId);
+    const item = snapshot.items.find((i) => i.productId === config.productId);
     if (!item) return [];
 
     const lineTotal = item.quantity * item.unitPrice;
     const amountOff = parseFloat(((lineTotal * config.percentage) / 100).toFixed(2));
 
-    return [{
-      discountId: discount.id,
-      discountName: discount.name,
-      productId: config.productId,
-      amountOff,
-      description: `${config.percentage}% off ${item.productName}`,
-    }];
+    return [
+      {
+        discountId: discount.id,
+        discountName: discount.name,
+        productId: config.productId,
+        amountOff,
+        description: `${config.percentage}% off ${item.productName}`,
+      },
+    ];
   }
 }

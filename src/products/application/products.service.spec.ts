@@ -4,7 +4,10 @@ import { ProductInMemoryRepository } from '../infrastructure/persistence/product
 
 const makeService = () => new ProductsService(new ProductInMemoryRepository());
 
-const seed = (service: ProductsService, overrides: Partial<{ price: number; stock: number }> = {}) =>
+const seed = (
+  service: ProductsService,
+  overrides: Partial<{ price: number; stock: number }> = {},
+) =>
   service.create({ name: 'Widget', description: 'A widget', price: 9.99, stock: 10, ...overrides });
 
 describe('ProductsService', () => {

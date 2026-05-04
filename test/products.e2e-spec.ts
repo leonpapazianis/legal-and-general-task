@@ -17,7 +17,9 @@ describe('Products (e2e)', () => {
     }).compile();
 
     app = module.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
+    );
     await app.init();
   });
 
@@ -88,7 +90,9 @@ describe('Products (e2e)', () => {
     });
 
     it('returns 404 for an unknown product', async () => {
-      const res = await request(app.getHttpServer()).patch('/products/unknown-id').send({ name: 'X' });
+      const res = await request(app.getHttpServer())
+        .patch('/products/unknown-id')
+        .send({ name: 'X' });
       expect(res.status).toBe(404);
     });
 

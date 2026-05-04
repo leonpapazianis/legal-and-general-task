@@ -9,19 +9,21 @@ export class FixedAmountOffProductStrategy implements IDiscountStrategy {
 
   apply(snapshot: CartSnapshot, discount: Discount): DiscountLineItem[] {
     const config = discount.config as FixedAmountOffProductConfig;
-    const item = snapshot.items.find(i => i.productId === config.productId);
+    const item = snapshot.items.find((i) => i.productId === config.productId);
     if (!item) return [];
 
     const lineTotal = item.quantity * item.unitPrice;
     const rawAmountOff = config.amountOff * item.quantity;
     const amountOff = parseFloat(Math.min(rawAmountOff, lineTotal).toFixed(2));
 
-    return [{
-      discountId: discount.id,
-      discountName: discount.name,
-      productId: config.productId,
-      amountOff,
-      description: `£${config.amountOff} off each ${item.productName}`,
-    }];
+    return [
+      {
+        discountId: discount.id,
+        discountName: discount.name,
+        productId: config.productId,
+        amountOff,
+        description: `£${config.amountOff} off each ${item.productName}`,
+      },
+    ];
   }
 }

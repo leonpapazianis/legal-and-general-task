@@ -1,5 +1,5 @@
 import { Discount, DiscountType } from '../discount.entity';
-import { CartSnapshot, CartLineItem } from '../cart-snapshot';
+import { CartSnapshot } from '../cart-snapshot';
 import { DiscountLineItem } from '../discount-result';
 
 export interface IDiscountStrategy {

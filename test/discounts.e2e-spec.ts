@@ -23,7 +23,9 @@ describe('Discounts (e2e)', () => {
     }).compile();
 
     app = module.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
+    );
     await app.init();
   });
 
@@ -40,30 +42,36 @@ describe('Discounts (e2e)', () => {
     });
 
     it('creates a BUY_X_GET_Y_FREE discount', async () => {
-      const res = await request(app.getHttpServer()).post('/discounts').send({
-        name: 'Buy 2 get 1 free',
-        type: 'BUY_X_GET_Y_FREE',
-        config: { productId: 'p1', buyQuantity: 2, getFreeQuantity: 1 },
-        isActive: true,
-      });
+      const res = await request(app.getHttpServer())
+        .post('/discounts')
+        .send({
+          name: 'Buy 2 get 1 free',
+          type: 'BUY_X_GET_Y_FREE',
+          config: { productId: 'p1', buyQuantity: 2, getFreeQuantity: 1 },
+          isActive: true,
+        });
       expect(res.status).toBe(201);
     });
 
     it('creates a CART_THRESHOLD_PERCENTAGE discount', async () => {
-      const res = await request(app.getHttpServer()).post('/discounts').send({
-        name: '10% off over £100',
-        type: 'CART_THRESHOLD_PERCENTAGE',
-        config: { thresholdAmount: 100, percentage: 10 },
-        isActive: true,
-      });
+      const res = await request(app.getHttpServer())
+        .post('/discounts')
+        .send({
+          name: '10% off over £100',
+          type: 'CART_THRESHOLD_PERCENTAGE',
+          config: { thresholdAmount: 100, percentage: 10 },
+          isActive: true,
+        });
       expect(res.status).toBe(201);
     });
 
     it('returns 400 when name is missing', async () => {
-      const res = await request(app.getHttpServer()).post('/discounts').send({
-        type: 'PERCENTAGE_OFF_PRODUCT',
-        config: { productId: 'p1', percentage: 10 },
-      });
+      const res = await request(app.getHttpServer())
+        .post('/discounts')
+        .send({
+          type: 'PERCENTAGE_OFF_PRODUCT',
+          config: { productId: 'p1', percentage: 10 },
+        });
       expect(res.status).toBe(400);
     });
 
@@ -121,7 +129,9 @@ describe('Discounts (e2e)', () => {
     });
 
     it('returns 404 for an unknown discount', async () => {
-      const res = await request(app.getHttpServer()).patch('/discounts/unknown-id').send({ name: 'X' });
+      const res = await request(app.getHttpServer())
+        .patch('/discounts/unknown-id')
+        .send({ name: 'X' });
       expect(res.status).toBe(404);
     });
   });
