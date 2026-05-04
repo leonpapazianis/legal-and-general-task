@@ -68,7 +68,9 @@ describe('CartService', () => {
       const product = seedProduct(productsService, 2);
       const cart = cartService.createCart();
 
-      expect(() => cartService.addItem(cart.id, product.id, 5)).toThrow(UnprocessableEntityException);
+      expect(() => cartService.addItem(cart.id, product.id, 5)).toThrow(
+        UnprocessableEntityException,
+      );
     });
 
     it('throws NotFoundException for unknown cart', () => {
@@ -127,7 +129,9 @@ describe('CartService', () => {
     it('throws NotFoundException when product is not in cart', () => {
       const { cartService } = makeServices();
       const cart = cartService.createCart();
-      expect(() => cartService.updateItemQuantity(cart.id, 'unknown', 1)).toThrow(NotFoundException);
+      expect(() => cartService.updateItemQuantity(cart.id, 'unknown', 1)).toThrow(
+        NotFoundException,
+      );
     });
   });
 

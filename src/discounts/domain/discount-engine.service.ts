@@ -11,16 +11,18 @@ export class DiscountEngineService {
   private readonly strategies: Map<DiscountType, IDiscountStrategy>;
 
   constructor(@Inject(DISCOUNT_STRATEGIES) strategies: IDiscountStrategy[]) {
-    this.strategies = new Map(strategies.map(s => [s.type, s]));
+    this.strategies = new Map(strategies.map((s) => [s.type, s]));
   }
 
   calculate(items: CartLineItem[], discounts: Discount[]): DiscountResult {
-    const activeDiscounts = discounts.filter(d => d.isActive);
-    const subtotal = parseFloat(items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0).toFixed(2));
+    const activeDiscounts = discounts.filter((d) => d.isActive);
+    const subtotal = parseFloat(
+      items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0).toFixed(2),
+    );
 
     // Pass 1: product-level discounts
     const productLines: DiscountLineItem[] = [];
-    const productDiscounts = activeDiscounts.filter(d => {
+    const productDiscounts = activeDiscounts.filter((d) => {
       const strategy = this.strategies.get(d.type);
       return strategy?.level === 'product';
     });
@@ -33,11 +35,13 @@ export class DiscountEngineService {
       productLines.push(...lines);
     }
 
-    const productLevelDiscount = parseFloat(productLines.reduce((sum, l) => sum + l.amountOff, 0).toFixed(2));
+    const productLevelDiscount = parseFloat(
+      productLines.reduce((sum, l) => sum + l.amountOff, 0).toFixed(2),
+    );
     const postPassOneSubtotal = parseFloat((subtotal - productLevelDiscount).toFixed(2));
 
     // Pass 2: cart-level discounts — apply to post-pass-1 subtotal, take the best only
-    const cartDiscounts = activeDiscounts.filter(d => {
+    const cartDiscounts = activeDiscounts.filter((d) => {
       const strategy = this.strategies.get(d.type);
       return strategy?.level === 'cart';
     });

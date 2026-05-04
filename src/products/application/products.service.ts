@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { Product, CreateProductProps, UpdateProductProps } from '../domain/product.entity';
 import type { IProductRepository } from '../domain/product.repository.port';
 import { PRODUCT_REPOSITORY } from '../domain/product.repository.port';
@@ -6,9 +11,7 @@ import { DomainError } from '../../shared/domain/domain.error';
 
 @Injectable()
 export class ProductsService {
-  constructor(
-    @Inject(PRODUCT_REPOSITORY) private readonly repo: IProductRepository,
-  ) {}
+  constructor(@Inject(PRODUCT_REPOSITORY) private readonly repo: IProductRepository) {}
 
   create(props: CreateProductProps): Product {
     const product = Product.create(props);

@@ -18,19 +18,31 @@ describe('Discount', () => {
 
     it('rejects percentage of zero', () => {
       expect(() =>
-        Discount.create({ name: 'bad', type: DiscountType.PERCENTAGE_OFF_PRODUCT, config: { productId: 'p1', percentage: 0 } }),
+        Discount.create({
+          name: 'bad',
+          type: DiscountType.PERCENTAGE_OFF_PRODUCT,
+          config: { productId: 'p1', percentage: 0 },
+        }),
       ).toThrow(DomainError);
     });
 
     it('rejects percentage above 100', () => {
       expect(() =>
-        Discount.create({ name: 'bad', type: DiscountType.PERCENTAGE_OFF_PRODUCT, config: { productId: 'p1', percentage: 101 } }),
+        Discount.create({
+          name: 'bad',
+          type: DiscountType.PERCENTAGE_OFF_PRODUCT,
+          config: { productId: 'p1', percentage: 101 },
+        }),
       ).toThrow(DomainError);
     });
 
     it('rejects missing productId', () => {
       expect(() =>
-        Discount.create({ name: 'bad', type: DiscountType.PERCENTAGE_OFF_PRODUCT, config: { productId: '', percentage: 10 } }),
+        Discount.create({
+          name: 'bad',
+          type: DiscountType.PERCENTAGE_OFF_PRODUCT,
+          config: { productId: '', percentage: 10 },
+        }),
       ).toThrow(DomainError);
     });
   });
@@ -47,13 +59,21 @@ describe('Discount', () => {
 
     it('rejects amountOff of zero', () => {
       expect(() =>
-        Discount.create({ name: 'bad', type: DiscountType.FIXED_AMOUNT_OFF_PRODUCT, config: { productId: 'p1', amountOff: 0 } }),
+        Discount.create({
+          name: 'bad',
+          type: DiscountType.FIXED_AMOUNT_OFF_PRODUCT,
+          config: { productId: 'p1', amountOff: 0 },
+        }),
       ).toThrow(DomainError);
     });
 
     it('rejects negative amountOff', () => {
       expect(() =>
-        Discount.create({ name: 'bad', type: DiscountType.FIXED_AMOUNT_OFF_PRODUCT, config: { productId: 'p1', amountOff: -5 } }),
+        Discount.create({
+          name: 'bad',
+          type: DiscountType.FIXED_AMOUNT_OFF_PRODUCT,
+          config: { productId: 'p1', amountOff: -5 },
+        }),
       ).toThrow(DomainError);
     });
   });
@@ -70,13 +90,21 @@ describe('Discount', () => {
 
     it('rejects buyQuantity less than 1', () => {
       expect(() =>
-        Discount.create({ name: 'bad', type: DiscountType.BUY_X_GET_Y_FREE, config: { productId: 'p1', buyQuantity: 0, getFreeQuantity: 1 } }),
+        Discount.create({
+          name: 'bad',
+          type: DiscountType.BUY_X_GET_Y_FREE,
+          config: { productId: 'p1', buyQuantity: 0, getFreeQuantity: 1 },
+        }),
       ).toThrow(DomainError);
     });
 
     it('rejects getFreeQuantity less than 1', () => {
       expect(() =>
-        Discount.create({ name: 'bad', type: DiscountType.BUY_X_GET_Y_FREE, config: { productId: 'p1', buyQuantity: 2, getFreeQuantity: 0 } }),
+        Discount.create({
+          name: 'bad',
+          type: DiscountType.BUY_X_GET_Y_FREE,
+          config: { productId: 'p1', buyQuantity: 2, getFreeQuantity: 0 },
+        }),
       ).toThrow(DomainError);
     });
   });
@@ -93,13 +121,21 @@ describe('Discount', () => {
 
     it('rejects thresholdAmount of zero', () => {
       expect(() =>
-        Discount.create({ name: 'bad', type: DiscountType.CART_THRESHOLD_PERCENTAGE, config: { thresholdAmount: 0, percentage: 10 } }),
+        Discount.create({
+          name: 'bad',
+          type: DiscountType.CART_THRESHOLD_PERCENTAGE,
+          config: { thresholdAmount: 0, percentage: 10 },
+        }),
       ).toThrow(DomainError);
     });
 
     it('rejects percentage of zero', () => {
       expect(() =>
-        Discount.create({ name: 'bad', type: DiscountType.CART_THRESHOLD_PERCENTAGE, config: { thresholdAmount: 100, percentage: 0 } }),
+        Discount.create({
+          name: 'bad',
+          type: DiscountType.CART_THRESHOLD_PERCENTAGE,
+          config: { thresholdAmount: 100, percentage: 0 },
+        }),
       ).toThrow(DomainError);
     });
   });

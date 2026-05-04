@@ -13,7 +13,7 @@ export class CartInMemoryRepository implements ICartRepository {
   }
 
   findByStatus(status: CartStatus): Cart[] {
-    return this.findAll().filter(c => c.status === status);
+    return this.findAll().filter((c) => c.status === status);
   }
 
   save(cart: Cart): Cart {

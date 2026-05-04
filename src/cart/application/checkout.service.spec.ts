@@ -27,7 +27,12 @@ const makeServices = () => {
     new CartThresholdPercentageStrategy(),
   ];
   const discountEngine = new DiscountEngineService(strategies);
-  const checkoutService = new CheckoutService(cartService, productsService, discountsService, discountEngine);
+  const checkoutService = new CheckoutService(
+    cartService,
+    productsService,
+    discountsService,
+    discountEngine,
+  );
   return { cartService, productsService, discountsService, checkoutService };
 };
 
@@ -35,7 +40,12 @@ describe('CheckoutService', () => {
   describe('checkout', () => {
     it('commits stock, marks cart CHECKED_OUT, returns result with subtotal and total', () => {
       const { cartService, productsService, checkoutService } = makeServices();
-      const product = productsService.create({ name: 'Widget', description: '', price: 10, stock: 10 });
+      const product = productsService.create({
+        name: 'Widget',
+        description: '',
+        price: 10,
+        stock: 10,
+      });
       const cart = cartService.createCart();
       cartService.addItem(cart.id, product.id, 3);
 
@@ -51,7 +61,12 @@ describe('CheckoutService', () => {
 
     it('applies active discounts and returns reduced total', () => {
       const { cartService, productsService, discountsService, checkoutService } = makeServices();
-      const product = productsService.create({ name: 'Widget', description: '', price: 10, stock: 10 });
+      const product = productsService.create({
+        name: 'Widget',
+        description: '',
+        price: 10,
+        stock: 10,
+      });
       discountsService.create({
         name: '10% off Widget',
         type: 'PERCENTAGE_OFF_PRODUCT' as any,
@@ -70,7 +85,12 @@ describe('CheckoutService', () => {
 
     it('throws ConflictException when cart is already CHECKED_OUT', () => {
       const { cartService, productsService, checkoutService } = makeServices();
-      const product = productsService.create({ name: 'Widget', description: '', price: 10, stock: 10 });
+      const product = productsService.create({
+        name: 'Widget',
+        description: '',
+        price: 10,
+        stock: 10,
+      });
       const cart = cartService.createCart();
       cartService.addItem(cart.id, product.id, 1);
       checkoutService.checkout(cart.id);
@@ -80,7 +100,12 @@ describe('CheckoutService', () => {
 
     it('throws ConflictException when cart is EXPIRED', () => {
       const { cartService, productsService, checkoutService } = makeServices();
-      const product = productsService.create({ name: 'Widget', description: '', price: 10, stock: 10 });
+      const product = productsService.create({
+        name: 'Widget',
+        description: '',
+        price: 10,
+        stock: 10,
+      });
       const cart = cartService.createCart();
       cartService.addItem(cart.id, product.id, 1);
       cartService.expireCart(cart.id);
