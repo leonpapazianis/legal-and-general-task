@@ -10,8 +10,7 @@ const createProduct = (app: INestApplication, overrides = {}) =>
     .post('/products')
     .send({ name: 'Widget', description: '', price: 10, stock: 10, ...overrides });
 
-const createCart = (app: INestApplication) =>
-  request(app.getHttpServer()).post('/carts').send();
+const createCart = (app: INestApplication) => request(app.getHttpServer()).post('/carts').send();
 
 const addItem = (app: INestApplication, cartId: string, productId: string, quantity: number) =>
   request(app.getHttpServer()).post(`/carts/${cartId}/items`).send({ productId, quantity });
@@ -28,7 +27,9 @@ describe('Checkout (e2e)', () => {
     }).compile();
 
     app = module.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
+    );
     await app.init();
   });
 
@@ -62,12 +63,14 @@ describe('Checkout (e2e)', () => {
     const product = await createProduct(app);
     const productId = product.body.data.id;
 
-    await request(app.getHttpServer()).post('/discounts').send({
-      name: '10% off Widget',
-      type: 'PERCENTAGE_OFF_PRODUCT',
-      config: { productId, percentage: 10 },
-      isActive: true,
-    });
+    await request(app.getHttpServer())
+      .post('/discounts')
+      .send({
+        name: '10% off Widget',
+        type: 'PERCENTAGE_OFF_PRODUCT',
+        config: { productId, percentage: 10 },
+        isActive: true,
+      });
 
     const cart = await createCart(app);
     await addItem(app, cart.body.data.id, productId, 2);

@@ -34,14 +34,12 @@ export class Cart {
   }
 
   get subtotal(): number {
-    return parseFloat(
-      this.items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0).toFixed(2),
-    );
+    return parseFloat(this.items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0).toFixed(2));
   }
 
   addItem(productId: string, productName: string, quantity: number, unitPrice: number): void {
     this.assertActive();
-    const existing = this.items.find(i => i.productId === productId);
+    const existing = this.items.find((i) => i.productId === productId);
     if (existing) {
       existing.quantity += quantity;
     } else {
@@ -52,12 +50,12 @@ export class Cart {
 
   updateItemQuantity(productId: string, quantity: number): number {
     this.assertActive();
-    const item = this.items.find(i => i.productId === productId);
+    const item = this.items.find((i) => i.productId === productId);
     if (!item) throw new DomainError(`Product '${productId}' not in cart`);
 
     const delta = quantity - item.quantity;
     if (quantity === 0) {
-      this.items = this.items.filter(i => i.productId !== productId);
+      this.items = this.items.filter((i) => i.productId !== productId);
     } else {
       item.quantity = quantity;
     }
@@ -67,9 +65,9 @@ export class Cart {
 
   removeItem(productId: string): number {
     this.assertActive();
-    const item = this.items.find(i => i.productId === productId);
+    const item = this.items.find((i) => i.productId === productId);
     if (!item) throw new DomainError(`Product '${productId}' not in cart`);
-    this.items = this.items.filter(i => i.productId !== productId);
+    this.items = this.items.filter((i) => i.productId !== productId);
     this.lastActivityAt = new Date();
     return item.quantity;
   }

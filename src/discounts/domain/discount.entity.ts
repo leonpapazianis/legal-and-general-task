@@ -95,7 +95,8 @@ export class Discount {
       }
       case DiscountType.CART_THRESHOLD_PERCENTAGE: {
         const c = config as CartThresholdPercentageConfig;
-        if (c.thresholdAmount <= 0) throw new DomainError('thresholdAmount must be greater than zero');
+        if (c.thresholdAmount <= 0)
+          throw new DomainError('thresholdAmount must be greater than zero');
         if (c.percentage <= 0 || c.percentage > 100)
           throw new DomainError('percentage must be between 1 and 100');
         break;

@@ -13,12 +13,14 @@ export class CartThresholdPercentageStrategy implements IDiscountStrategy {
 
     const amountOff = parseFloat(((snapshot.subtotal * config.percentage) / 100).toFixed(2));
 
-    return [{
-      discountId: discount.id,
-      discountName: discount.name,
-      productId: null,
-      amountOff,
-      description: `${config.percentage}% off orders over £${config.thresholdAmount}`,
-    }];
+    return [
+      {
+        discountId: discount.id,
+        discountName: discount.name,
+        productId: null,
+        amountOff,
+        description: `${config.percentage}% off orders over £${config.thresholdAmount}`,
+      },
+    ];
   }
 }

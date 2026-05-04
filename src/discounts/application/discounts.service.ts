@@ -5,9 +5,7 @@ import { DISCOUNT_REPOSITORY } from '../domain/discount.repository.port';
 
 @Injectable()
 export class DiscountsService {
-  constructor(
-    @Inject(DISCOUNT_REPOSITORY) private readonly repo: IDiscountRepository,
-  ) {}
+  constructor(@Inject(DISCOUNT_REPOSITORY) private readonly repo: IDiscountRepository) {}
 
   create(props: CreateDiscountProps): Discount {
     const discount = Discount.create(props);

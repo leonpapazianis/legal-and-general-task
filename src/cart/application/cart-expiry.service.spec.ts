@@ -20,7 +20,12 @@ describe('CartExpiryService', () => {
   describe('sweep', () => {
     it('expires ACTIVE carts past the TTL and releases their reservations', () => {
       const { cartService, productsService, expiryService } = makeServices();
-      const product = productsService.create({ name: 'Widget', description: '', price: 9.99, stock: 10 });
+      const product = productsService.create({
+        name: 'Widget',
+        description: '',
+        price: 9.99,
+        stock: 10,
+      });
       const cart = cartService.createCart();
       cartService.addItem(cart.id, product.id, 4);
 
@@ -36,7 +41,12 @@ describe('CartExpiryService', () => {
 
     it('does not expire ACTIVE carts within the TTL', () => {
       const { cartService, productsService, expiryService } = makeServices();
-      const product = productsService.create({ name: 'Widget', description: '', price: 9.99, stock: 10 });
+      const product = productsService.create({
+        name: 'Widget',
+        description: '',
+        price: 9.99,
+        stock: 10,
+      });
       const cart = cartService.createCart();
       cartService.addItem(cart.id, product.id, 2);
 
@@ -48,7 +58,12 @@ describe('CartExpiryService', () => {
 
     it('does not touch already CHECKED_OUT carts', () => {
       const { cartService, productsService, expiryService } = makeServices();
-      const product = productsService.create({ name: 'Widget', description: '', price: 9.99, stock: 10 });
+      const product = productsService.create({
+        name: 'Widget',
+        description: '',
+        price: 9.99,
+        stock: 10,
+      });
       const cart = cartService.createCart();
       cartService.addItem(cart.id, product.id, 1);
 

@@ -66,9 +66,7 @@ export class Product {
 
   commit(quantity: number): void {
     if (quantity > this.reserved) {
-      throw new DomainError(
-        `Cannot commit ${quantity} units — only ${this.reserved} are reserved`,
-      );
+      throw new DomainError(`Cannot commit ${quantity} units — only ${this.reserved} are reserved`);
     }
     this.stock -= quantity;
     this.reserved -= quantity;

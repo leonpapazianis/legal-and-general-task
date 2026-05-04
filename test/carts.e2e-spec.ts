@@ -9,8 +9,7 @@ const createProduct = (app: INestApplication, overrides = {}) =>
     .post('/products')
     .send({ name: 'Widget', description: '', price: 9.99, stock: 10, ...overrides });
 
-const createCart = (app: INestApplication) =>
-  request(app.getHttpServer()).post('/carts').send();
+const createCart = (app: INestApplication) => request(app.getHttpServer()).post('/carts').send();
 
 describe('Carts (e2e)', () => {
   let app: INestApplication;
@@ -21,7 +20,9 @@ describe('Carts (e2e)', () => {
     }).compile();
 
     app = module.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
+    );
     await app.init();
   });
 
@@ -86,8 +87,12 @@ describe('Carts (e2e)', () => {
       const cart = await createCart(app);
       const cartId = cart.body.data.id;
 
-      await request(app.getHttpServer()).post(`/carts/${cartId}/items`).send({ productId, quantity: 2 });
-      const res = await request(app.getHttpServer()).post(`/carts/${cartId}/items`).send({ productId, quantity: 3 });
+      await request(app.getHttpServer())
+        .post(`/carts/${cartId}/items`)
+        .send({ productId, quantity: 2 });
+      const res = await request(app.getHttpServer())
+        .post(`/carts/${cartId}/items`)
+        .send({ productId, quantity: 3 });
 
       expect(res.status).toBe(201);
       expect(res.body.data.items[0].quantity).toBe(5);
@@ -128,7 +133,9 @@ describe('Carts (e2e)', () => {
       const cart = await createCart(app);
       const cartId = cart.body.data.id;
 
-      await request(app.getHttpServer()).post(`/carts/${cartId}/items`).send({ productId, quantity: 2 });
+      await request(app.getHttpServer())
+        .post(`/carts/${cartId}/items`)
+        .send({ productId, quantity: 2 });
 
       const res = await request(app.getHttpServer())
         .patch(`/carts/${cartId}/items/${productId}`)
@@ -147,7 +154,9 @@ describe('Carts (e2e)', () => {
       const cart = await createCart(app);
       const cartId = cart.body.data.id;
 
-      await request(app.getHttpServer()).post(`/carts/${cartId}/items`).send({ productId, quantity: 3 });
+      await request(app.getHttpServer())
+        .post(`/carts/${cartId}/items`)
+        .send({ productId, quantity: 3 });
       const res = await request(app.getHttpServer())
         .patch(`/carts/${cartId}/items/${productId}`)
         .send({ quantity: 0 });
@@ -172,7 +181,9 @@ describe('Carts (e2e)', () => {
       const cart = await createCart(app);
       const cartId = cart.body.data.id;
 
-      await request(app.getHttpServer()).post(`/carts/${cartId}/items`).send({ productId, quantity: 4 });
+      await request(app.getHttpServer())
+        .post(`/carts/${cartId}/items`)
+        .send({ productId, quantity: 4 });
       const res = await request(app.getHttpServer()).delete(`/carts/${cartId}/items/${productId}`);
 
       expect(res.status).toBe(204);
@@ -186,8 +197,9 @@ describe('Carts (e2e)', () => {
 
     it('returns 404 when product is not in cart', async () => {
       const cart = await createCart(app);
-      const res = await request(app.getHttpServer())
-        .delete(`/carts/${cart.body.data.id}/items/unknown-product`);
+      const res = await request(app.getHttpServer()).delete(
+        `/carts/${cart.body.data.id}/items/unknown-product`,
+      );
       expect(res.status).toBe(404);
     });
   });
