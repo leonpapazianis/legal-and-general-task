@@ -86,6 +86,16 @@ export class Cart {
     this.status = CartStatus.EXPIRED;
   }
 
+  clone(): Cart {
+    return Object.assign(Object.create(Cart.prototype) as Cart, {
+      id: this.id,
+      status: this.status,
+      items: this.items.map((i) => ({ ...i })),
+      lastActivityAt: new Date(this.lastActivityAt),
+      createdAt: new Date(this.createdAt),
+    });
+  }
+
   private assertActive(): void {
     if (this.status === CartStatus.CHECKED_OUT) {
       throw new DomainError('Cart has already been checked out');

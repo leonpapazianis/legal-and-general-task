@@ -5,19 +5,19 @@ export class DiscountInMemoryRepository implements IDiscountRepository {
   private readonly store = new Map<string, Discount>();
 
   findById(id: string): Discount | undefined {
-    return this.store.get(id);
+    return this.store.get(id)?.clone();
   }
 
   findAll(): Discount[] {
-    return Array.from(this.store.values());
+    return Array.from(this.store.values()).map((d) => d.clone());
   }
 
   findAllActive(): Discount[] {
-    return this.findAll().filter(d => d.isActive);
+    return this.findAll().filter((d) => d.isActive);
   }
 
   save(discount: Discount): Discount {
-    this.store.set(discount.id, discount);
+    this.store.set(discount.id, discount.clone());
     return discount;
   }
 

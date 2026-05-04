@@ -24,7 +24,9 @@ describe('CartExpiryService', () => {
       const cart = cartService.createCart();
       cartService.addItem(cart.id, product.id, 4);
 
-      cartService.getCart(cart.id).lastActivityAt = new Date(Date.now() - TTL_MS - 1000);
+      const liveCart = cartService.getCart(cart.id);
+      liveCart.lastActivityAt = new Date(Date.now() - TTL_MS - 1000);
+      cartService.persistCart(liveCart);
 
       expiryService.sweep(TTL_MS);
 
@@ -49,8 +51,11 @@ describe('CartExpiryService', () => {
       const product = productsService.create({ name: 'Widget', description: '', price: 9.99, stock: 10 });
       const cart = cartService.createCart();
       cartService.addItem(cart.id, product.id, 1);
-      cartService.getCart(cart.id).markCheckedOut();
-      cartService.getCart(cart.id).lastActivityAt = new Date(Date.now() - TTL_MS - 1000);
+
+      const liveCart = cartService.getCart(cart.id);
+      liveCart.markCheckedOut();
+      liveCart.lastActivityAt = new Date(Date.now() - TTL_MS - 1000);
+      cartService.persistCart(liveCart);
 
       expiryService.sweep(TTL_MS);
 
