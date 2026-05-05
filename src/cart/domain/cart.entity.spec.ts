@@ -49,6 +49,16 @@ describe('Cart', () => {
       cart.markExpired();
       expect(() => cart.addItem('p1', 'Widget', 1, 10)).toThrow(DomainError);
     });
+
+    it('throws InvariantViolationError when quantity is zero', () => {
+      const cart = makeCart();
+      expect(() => cart.addItem('p1', 'Widget', 0, 10)).toThrow(DomainError);
+    });
+
+    it('throws InvariantViolationError when quantity is negative', () => {
+      const cart = makeCart();
+      expect(() => cart.addItem('p1', 'Widget', -1, 10)).toThrow(DomainError);
+    });
   });
 
   describe('updateItemQuantity', () => {

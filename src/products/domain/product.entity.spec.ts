@@ -103,5 +103,18 @@ describe('Product', () => {
       const p = makeProduct();
       expect(() => p.update({ price: 0 })).toThrow(DomainError);
     });
+
+    it('rejects updating stock below the currently reserved quantity', () => {
+      const p = makeProduct({ stock: 10 });
+      p.reserve(7);
+      expect(() => p.update({ stock: 5 })).toThrow(DomainError);
+    });
+
+    it('allows updating stock to exactly the reserved quantity', () => {
+      const p = makeProduct({ stock: 10 });
+      p.reserve(5);
+      expect(() => p.update({ stock: 5 })).not.toThrow();
+      expect(p.availableStock).toBe(0);
+    });
   });
 });

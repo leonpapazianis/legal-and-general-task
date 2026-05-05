@@ -1,5 +1,9 @@
 import { randomUUID } from 'crypto';
-import { CartNotActiveError, EntityNotFoundError } from '../../shared/domain/domain.error';
+import {
+  CartNotActiveError,
+  EntityNotFoundError,
+  InvariantViolationError,
+} from '../../shared/domain/domain.error';
 
 export enum CartStatus {
   ACTIVE = 'ACTIVE',
@@ -38,6 +42,7 @@ export class Cart {
   }
 
   addItem(productId: string, productName: string, quantity: number, unitPrice: number): void {
+    if (quantity <= 0) throw new InvariantViolationError('Item quantity must be greater than zero');
     this.assertActive();
     const existing = this.items.find((i) => i.productId === productId);
     if (existing) {

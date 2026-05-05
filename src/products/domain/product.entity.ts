@@ -85,6 +85,11 @@ export class Product {
     if (props.price !== undefined && props.price <= 0) {
       throw new InvariantViolationError('Product price must be greater than zero');
     }
+    if (props.stock !== undefined && props.stock < this.reserved) {
+      throw new InvariantViolationError(
+        `Cannot set stock to ${props.stock} — ${this.reserved} units are currently reserved`,
+      );
+    }
     if (props.name !== undefined) this.name = props.name;
     if (props.description !== undefined) this.description = props.description;
     if (props.price !== undefined) this.price = props.price;
