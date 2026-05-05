@@ -12,7 +12,7 @@ const makeServices = () => {
   const productsService = new ProductsService(productRepo);
   const cartRepo = new CartInMemoryRepository();
   const cartService = new CartService(cartRepo, productsService);
-  const expiryService = new CartExpiryService(cartService, cartRepo);
+  const expiryService = new CartExpiryService(cartService);
   return { cartService, productsService, expiryService };
 };
 

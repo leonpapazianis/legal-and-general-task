@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { Cart } from '../domain/cart.entity';
+import { Cart, CartStatus } from '../domain/cart.entity';
 import type { ICartRepository } from '../domain/cart.repository.port';
 import { CART_REPOSITORY } from '../domain/cart.repository.port';
 import { ProductsService } from '../../products/application/products.service';
@@ -61,6 +61,10 @@ export class CartService {
     const qty = cart.removeItem(productId);
     this.productsService.release(productId, qty);
     return this.repo.save(cart);
+  }
+
+  findActiveCarts(): Cart[] {
+    return this.repo.findByStatus(CartStatus.ACTIVE);
   }
 
   persistCart(cart: Cart): Cart {

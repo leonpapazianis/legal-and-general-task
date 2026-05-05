@@ -1,5 +1,9 @@
 import { Cart, CartStatus } from './cart.entity';
-import { DomainError } from '../../shared/domain/domain.error';
+import {
+  CartNotActiveError,
+  EntityNotFoundError,
+  InvariantViolationError,
+} from '../../shared/domain/domain.error';
 
 const makeCart = () => Cart.create();
 
@@ -37,27 +41,27 @@ describe('Cart', () => {
       expect(cart.lastActivityAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
     });
 
-    it('throws when cart is CHECKED_OUT', () => {
+    it('throws CartNotActiveError when cart is CHECKED_OUT', () => {
       const cart = makeCart();
       cart.addItem('p1', 'Widget', 1, 10);
       cart.markCheckedOut();
-      expect(() => cart.addItem('p2', 'Gadget', 1, 5)).toThrow(DomainError);
+      expect(() => cart.addItem('p2', 'Gadget', 1, 5)).toThrow(CartNotActiveError);
     });
 
-    it('throws when cart is EXPIRED', () => {
+    it('throws CartNotActiveError when cart is EXPIRED', () => {
       const cart = makeCart();
       cart.markExpired();
-      expect(() => cart.addItem('p1', 'Widget', 1, 10)).toThrow(DomainError);
+      expect(() => cart.addItem('p1', 'Widget', 1, 10)).toThrow(CartNotActiveError);
     });
 
     it('throws InvariantViolationError when quantity is zero', () => {
       const cart = makeCart();
-      expect(() => cart.addItem('p1', 'Widget', 0, 10)).toThrow(DomainError);
+      expect(() => cart.addItem('p1', 'Widget', 0, 10)).toThrow(InvariantViolationError);
     });
 
     it('throws InvariantViolationError when quantity is negative', () => {
       const cart = makeCart();
-      expect(() => cart.addItem('p1', 'Widget', -1, 10)).toThrow(DomainError);
+      expect(() => cart.addItem('p1', 'Widget', -1, 10)).toThrow(InvariantViolationError);
     });
   });
 
@@ -85,9 +89,9 @@ describe('Cart', () => {
       expect(cart.items).toHaveLength(0);
     });
 
-    it('throws when product is not in cart', () => {
+    it('throws EntityNotFoundError when product is not in cart', () => {
       const cart = makeCart();
-      expect(() => cart.updateItemQuantity('unknown', 1)).toThrow(DomainError);
+      expect(() => cart.updateItemQuantity('unknown', 1)).toThrow(EntityNotFoundError);
     });
   });
 
@@ -100,9 +104,9 @@ describe('Cart', () => {
       expect(cart.items).toHaveLength(0);
     });
 
-    it('throws when product is not in cart', () => {
+    it('throws EntityNotFoundError when product is not in cart', () => {
       const cart = makeCart();
-      expect(() => cart.removeItem('unknown')).toThrow(DomainError);
+      expect(() => cart.removeItem('unknown')).toThrow(EntityNotFoundError);
     });
   });
 

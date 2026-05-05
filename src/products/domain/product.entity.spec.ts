@@ -1,5 +1,5 @@
 import { Product } from './product.entity';
-import { DomainError } from '../../shared/domain/domain.error';
+import { InvariantViolationError, StockUnavailableError } from '../../shared/domain/domain.error';
 
 const makeProduct = (overrides: Partial<{ price: number; stock: number }> = {}) =>
   Product.create({ name: 'Widget', description: 'A widget', price: 9.99, stock: 10, ...overrides });
@@ -16,15 +16,15 @@ describe('Product', () => {
     });
 
     it('rejects a negative price', () => {
-      expect(() => makeProduct({ price: -1 })).toThrow(DomainError);
+      expect(() => makeProduct({ price: -1 })).toThrow(InvariantViolationError);
     });
 
     it('rejects a zero price', () => {
-      expect(() => makeProduct({ price: 0 })).toThrow(DomainError);
+      expect(() => makeProduct({ price: 0 })).toThrow(InvariantViolationError);
     });
 
     it('rejects negative stock', () => {
-      expect(() => makeProduct({ stock: -1 })).toThrow(DomainError);
+      expect(() => makeProduct({ stock: -1 })).toThrow(InvariantViolationError);
     });
 
     it('allows zero stock', () => {
@@ -47,9 +47,9 @@ describe('Product', () => {
       expect(p.reserved).toBe(4);
     });
 
-    it('throws when requested quantity exceeds available stock', () => {
+    it('throws StockUnavailableError when requested quantity exceeds available stock', () => {
       const p = makeProduct({ stock: 5 });
-      expect(() => p.reserve(6)).toThrow(DomainError);
+      expect(() => p.reserve(6)).toThrow(StockUnavailableError);
     });
 
     it('allows reserving exactly the available stock', () => {
@@ -67,10 +67,10 @@ describe('Product', () => {
       expect(p.reserved).toBe(4);
     });
 
-    it('does not allow releasing more than reserved', () => {
+    it('throws InvariantViolationError when releasing more than reserved', () => {
       const p = makeProduct({ stock: 10 });
       p.reserve(3);
-      expect(() => p.release(4)).toThrow(DomainError);
+      expect(() => p.release(4)).toThrow(InvariantViolationError);
     });
   });
 
@@ -83,10 +83,10 @@ describe('Product', () => {
       expect(p.reserved).toBe(0);
     });
 
-    it('throws when committing more than reserved', () => {
+    it('throws InvariantViolationError when committing more than reserved', () => {
       const p = makeProduct({ stock: 10 });
       p.reserve(2);
-      expect(() => p.commit(3)).toThrow(DomainError);
+      expect(() => p.commit(3)).toThrow(InvariantViolationError);
     });
   });
 
@@ -99,15 +99,15 @@ describe('Product', () => {
       expect(p.description).toBe('A widget');
     });
 
-    it('rejects updating price to zero', () => {
+    it('throws InvariantViolationError when updating price to zero', () => {
       const p = makeProduct();
-      expect(() => p.update({ price: 0 })).toThrow(DomainError);
+      expect(() => p.update({ price: 0 })).toThrow(InvariantViolationError);
     });
 
-    it('rejects updating stock below the currently reserved quantity', () => {
+    it('throws InvariantViolationError when updating stock below the currently reserved quantity', () => {
       const p = makeProduct({ stock: 10 });
       p.reserve(7);
-      expect(() => p.update({ stock: 5 })).toThrow(DomainError);
+      expect(() => p.update({ stock: 5 })).toThrow(InvariantViolationError);
     });
 
     it('allows updating stock to exactly the reserved quantity', () => {
