@@ -1,6 +1,7 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { CartStatus } from '../domain/cart.entity';
+import { CartNotActiveError } from '../../shared/domain/domain.error';
 import { ProductsService } from '../../products/application/products.service';
 import { DiscountsService } from '../../discounts/application/discounts.service';
 import { DiscountEngineService } from '../../discounts/domain/discount-engine.service';
@@ -25,7 +26,7 @@ export class CheckoutService {
   checkout(cartId: string): CheckoutResult {
     const cart = this.cartService.getCart(cartId);
     if (cart.status !== CartStatus.ACTIVE) {
-      throw new ConflictException('Cart is not active');
+      throw new CartNotActiveError('Cart is not active');
     }
 
     const activeDiscounts = this.discountsService.findAllActive();

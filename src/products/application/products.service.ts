@@ -1,13 +1,8 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Product, CreateProductProps, UpdateProductProps } from '../domain/product.entity';
 import type { IProductRepository } from '../domain/product.repository.port';
 import { PRODUCT_REPOSITORY } from '../domain/product.repository.port';
-import { DomainError } from '../../shared/domain/domain.error';
+import { EntityNotFoundError } from '../../shared/domain/domain.error';
 
 @Injectable()
 export class ProductsService {
@@ -24,18 +19,13 @@ export class ProductsService {
 
   findById(id: string): Product {
     const product = this.repo.findById(id);
-    if (!product) throw new NotFoundException(`Product '${id}' not found`);
+    if (!product) throw new EntityNotFoundError(`Product '${id}' not found`);
     return product;
   }
 
   update(id: string, props: UpdateProductProps): Product {
     const product = this.findById(id);
-    try {
-      product.update(props);
-    } catch (err) {
-      if (err instanceof DomainError) throw new UnprocessableEntityException(err.message);
-      throw err;
-    }
+    product.update(props);
     return this.repo.save(product);
   }
 
@@ -46,12 +36,7 @@ export class ProductsService {
 
   reserve(id: string, quantity: number): void {
     const product = this.findById(id);
-    try {
-      product.reserve(quantity);
-    } catch (err) {
-      if (err instanceof DomainError) throw new UnprocessableEntityException(err.message);
-      throw err;
-    }
+    product.reserve(quantity);
     this.repo.save(product);
   }
 

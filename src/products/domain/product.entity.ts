@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { DomainError } from '../../shared/domain/domain.error';
+import { InvariantViolationError, StockUnavailableError } from '../../shared/domain/domain.error';
 
 export interface CreateProductProps {
   name: string;
@@ -37,8 +37,9 @@ export class Product {
   }
 
   static create(props: CreateProductProps): Product {
-    if (props.price <= 0) throw new DomainError('Product price must be greater than zero');
-    if (props.stock < 0) throw new DomainError('Product stock cannot be negative');
+    if (props.price <= 0)
+      throw new InvariantViolationError('Product price must be greater than zero');
+    if (props.stock < 0) throw new InvariantViolationError('Product stock cannot be negative');
     return new Product(randomUUID(), props);
   }
 
@@ -48,7 +49,7 @@ export class Product {
 
   reserve(quantity: number): void {
     if (quantity > this.availableStock) {
-      throw new DomainError(
+      throw new StockUnavailableError(
         `Insufficient stock: requested ${quantity}, available ${this.availableStock}`,
       );
     }
@@ -57,7 +58,7 @@ export class Product {
 
   release(quantity: number): void {
     if (quantity > this.reserved) {
-      throw new DomainError(
+      throw new InvariantViolationError(
         `Cannot release ${quantity} units — only ${this.reserved} are reserved`,
       );
     }
@@ -66,7 +67,9 @@ export class Product {
 
   commit(quantity: number): void {
     if (quantity > this.reserved) {
-      throw new DomainError(`Cannot commit ${quantity} units — only ${this.reserved} are reserved`);
+      throw new InvariantViolationError(
+        `Cannot commit ${quantity} units — only ${this.reserved} are reserved`,
+      );
     }
     this.stock -= quantity;
     this.reserved -= quantity;
@@ -75,7 +78,7 @@ export class Product {
 
   update(props: UpdateProductProps): void {
     if (props.price !== undefined && props.price <= 0) {
-      throw new DomainError('Product price must be greater than zero');
+      throw new InvariantViolationError('Product price must be greater than zero');
     }
     if (props.name !== undefined) this.name = props.name;
     if (props.description !== undefined) this.description = props.description;

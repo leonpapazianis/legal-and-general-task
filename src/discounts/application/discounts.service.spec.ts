@@ -1,7 +1,7 @@
-import { NotFoundException } from '@nestjs/common';
 import { DiscountsService } from './discounts.service';
 import { DiscountInMemoryRepository } from '../infrastructure/persistence/discount.in-memory.repository';
 import { DiscountType } from '../domain/discount.entity';
+import { EntityNotFoundError } from '../../shared/domain/domain.error';
 
 const makeService = () => new DiscountsService(new DiscountInMemoryRepository());
 
@@ -54,8 +54,8 @@ describe('DiscountsService', () => {
   });
 
   describe('findById', () => {
-    it('throws NotFoundException for unknown id', () => {
-      expect(() => makeService().findById('unknown')).toThrow(NotFoundException);
+    it('throws EntityNotFoundError for unknown id', () => {
+      expect(() => makeService().findById('unknown')).toThrow(EntityNotFoundError);
     });
   });
 
@@ -68,8 +68,8 @@ describe('DiscountsService', () => {
       expect(updated.isActive).toBe(false);
     });
 
-    it('throws NotFoundException for unknown id', () => {
-      expect(() => makeService().update('unknown', { name: 'X' })).toThrow(NotFoundException);
+    it('throws EntityNotFoundError for unknown id', () => {
+      expect(() => makeService().update('unknown', { name: 'X' })).toThrow(EntityNotFoundError);
     });
   });
 
@@ -78,11 +78,11 @@ describe('DiscountsService', () => {
       const svc = makeService();
       const d = seedDiscount(svc);
       svc.delete(d.id);
-      expect(() => svc.findById(d.id)).toThrow(NotFoundException);
+      expect(() => svc.findById(d.id)).toThrow(EntityNotFoundError);
     });
 
-    it('throws NotFoundException for unknown id', () => {
-      expect(() => makeService().delete('unknown')).toThrow(NotFoundException);
+    it('throws EntityNotFoundError for unknown id', () => {
+      expect(() => makeService().delete('unknown')).toThrow(EntityNotFoundError);
     });
   });
 });

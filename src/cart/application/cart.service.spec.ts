@@ -1,9 +1,13 @@
-import { NotFoundException, ConflictException, UnprocessableEntityException } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { CartInMemoryRepository } from '../infrastructure/persistence/cart.in-memory.repository';
 import { ProductsService } from '../../products/application/products.service';
 import { ProductInMemoryRepository } from '../../products/infrastructure/persistence/product.in-memory.repository';
 import { CartStatus } from '../domain/cart.entity';
+import {
+  EntityNotFoundError,
+  StockUnavailableError,
+  CartNotActiveError,
+} from '../../shared/domain/domain.error';
 
 const makeServices = () => {
   const productRepo = new ProductInMemoryRepository();
@@ -33,9 +37,9 @@ describe('CartService', () => {
       expect(cartService.getCart(created.id).id).toBe(created.id);
     });
 
-    it('throws NotFoundException for unknown id', () => {
+    it('throws EntityNotFoundError for unknown id', () => {
       const { cartService } = makeServices();
-      expect(() => cartService.getCart('unknown')).toThrow(NotFoundException);
+      expect(() => cartService.getCart('unknown')).toThrow(EntityNotFoundError);
     });
   });
 
@@ -63,23 +67,21 @@ describe('CartService', () => {
       expect(productsService.findById(product.id).availableStock).toBe(5);
     });
 
-    it('throws UnprocessableEntityException when stock is insufficient', () => {
+    it('throws StockUnavailableError when stock is insufficient', () => {
       const { cartService, productsService } = makeServices();
       const product = seedProduct(productsService, 2);
       const cart = cartService.createCart();
 
-      expect(() => cartService.addItem(cart.id, product.id, 5)).toThrow(
-        UnprocessableEntityException,
-      );
+      expect(() => cartService.addItem(cart.id, product.id, 5)).toThrow(StockUnavailableError);
     });
 
-    it('throws NotFoundException for unknown cart', () => {
+    it('throws EntityNotFoundError for unknown cart', () => {
       const { cartService, productsService } = makeServices();
       const product = seedProduct(productsService);
-      expect(() => cartService.addItem('unknown', product.id, 1)).toThrow(NotFoundException);
+      expect(() => cartService.addItem('unknown', product.id, 1)).toThrow(EntityNotFoundError);
     });
 
-    it('throws ConflictException when cart is not ACTIVE', () => {
+    it('throws CartNotActiveError when cart is not ACTIVE', () => {
       const { cartService, productsService } = makeServices();
       const product = seedProduct(productsService, 10);
       const cart = cartService.createCart();
@@ -87,7 +89,7 @@ describe('CartService', () => {
       const liveCart = cartService.getCart(cart.id);
       liveCart.markCheckedOut();
       cartService.persistCart(liveCart);
-      expect(() => cartService.addItem(cart.id, product.id, 1)).toThrow(ConflictException);
+      expect(() => cartService.addItem(cart.id, product.id, 1)).toThrow(CartNotActiveError);
     });
   });
 
@@ -128,11 +130,11 @@ describe('CartService', () => {
       expect(productsService.findById(product.id).availableStock).toBe(10);
     });
 
-    it('throws NotFoundException when product is not in cart', () => {
+    it('throws EntityNotFoundError when product is not in cart', () => {
       const { cartService } = makeServices();
       const cart = cartService.createCart();
       expect(() => cartService.updateItemQuantity(cart.id, 'unknown', 1)).toThrow(
-        NotFoundException,
+        EntityNotFoundError,
       );
     });
   });
@@ -150,10 +152,10 @@ describe('CartService', () => {
       expect(productsService.findById(product.id).availableStock).toBe(10);
     });
 
-    it('throws NotFoundException when product is not in cart', () => {
+    it('throws EntityNotFoundError when product is not in cart', () => {
       const { cartService } = makeServices();
       const cart = cartService.createCart();
-      expect(() => cartService.removeItem(cart.id, 'unknown')).toThrow(NotFoundException);
+      expect(() => cartService.removeItem(cart.id, 'unknown')).toThrow(EntityNotFoundError);
     });
   });
 

@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { DomainError } from '../../shared/domain/domain.error';
+import { InvariantViolationError } from '../../shared/domain/domain.error';
 
 export enum DiscountType {
   PERCENTAGE_OFF_PRODUCT = 'PERCENTAGE_OFF_PRODUCT',
@@ -75,30 +75,32 @@ export class Discount {
     switch (type) {
       case DiscountType.PERCENTAGE_OFF_PRODUCT: {
         const c = config as PercentageOffProductConfig;
-        if (!c.productId) throw new DomainError('productId is required');
+        if (!c.productId) throw new InvariantViolationError('productId is required');
         if (c.percentage <= 0 || c.percentage > 100)
-          throw new DomainError('percentage must be between 1 and 100');
+          throw new InvariantViolationError('percentage must be between 1 and 100');
         break;
       }
       case DiscountType.FIXED_AMOUNT_OFF_PRODUCT: {
         const c = config as FixedAmountOffProductConfig;
-        if (!c.productId) throw new DomainError('productId is required');
-        if (c.amountOff <= 0) throw new DomainError('amountOff must be greater than zero');
+        if (!c.productId) throw new InvariantViolationError('productId is required');
+        if (c.amountOff <= 0)
+          throw new InvariantViolationError('amountOff must be greater than zero');
         break;
       }
       case DiscountType.BUY_X_GET_Y_FREE: {
         const c = config as BuyXGetYFreeConfig;
-        if (!c.productId) throw new DomainError('productId is required');
-        if (c.buyQuantity < 1) throw new DomainError('buyQuantity must be at least 1');
-        if (c.getFreeQuantity < 1) throw new DomainError('getFreeQuantity must be at least 1');
+        if (!c.productId) throw new InvariantViolationError('productId is required');
+        if (c.buyQuantity < 1) throw new InvariantViolationError('buyQuantity must be at least 1');
+        if (c.getFreeQuantity < 1)
+          throw new InvariantViolationError('getFreeQuantity must be at least 1');
         break;
       }
       case DiscountType.CART_THRESHOLD_PERCENTAGE: {
         const c = config as CartThresholdPercentageConfig;
         if (c.thresholdAmount <= 0)
-          throw new DomainError('thresholdAmount must be greater than zero');
+          throw new InvariantViolationError('thresholdAmount must be greater than zero');
         if (c.percentage <= 0 || c.percentage > 100)
-          throw new DomainError('percentage must be between 1 and 100');
+          throw new InvariantViolationError('percentage must be between 1 and 100');
         break;
       }
     }

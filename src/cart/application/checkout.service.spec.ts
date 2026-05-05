@@ -1,4 +1,3 @@
-import { ConflictException } from '@nestjs/common';
 import { CheckoutService } from './checkout.service';
 import { CartService } from './cart.service';
 import { CartInMemoryRepository } from '../infrastructure/persistence/cart.in-memory.repository';
@@ -8,6 +7,7 @@ import { DiscountEngineService } from '../../discounts/domain/discount-engine.se
 import { DiscountsService } from '../../discounts/application/discounts.service';
 import { DiscountInMemoryRepository } from '../../discounts/infrastructure/persistence/discount.in-memory.repository';
 import { CartStatus } from '../domain/cart.entity';
+import { CartNotActiveError } from '../../shared/domain/domain.error';
 import { PercentageOffProductStrategy } from '../../discounts/domain/strategies/percentage-off-product.strategy';
 import { FixedAmountOffProductStrategy } from '../../discounts/domain/strategies/fixed-amount-off-product.strategy';
 import { BuyXGetYFreeStrategy } from '../../discounts/domain/strategies/buy-x-get-y-free.strategy';
@@ -83,7 +83,7 @@ describe('CheckoutService', () => {
       expect(result.discounts.totalDiscount).toBe(2);
     });
 
-    it('throws ConflictException when cart is already CHECKED_OUT', () => {
+    it('throws CartNotActiveError when cart is already CHECKED_OUT', () => {
       const { cartService, productsService, checkoutService } = makeServices();
       const product = productsService.create({
         name: 'Widget',
@@ -95,10 +95,10 @@ describe('CheckoutService', () => {
       cartService.addItem(cart.id, product.id, 1);
       checkoutService.checkout(cart.id);
 
-      expect(() => checkoutService.checkout(cart.id)).toThrow(ConflictException);
+      expect(() => checkoutService.checkout(cart.id)).toThrow(CartNotActiveError);
     });
 
-    it('throws ConflictException when cart is EXPIRED', () => {
+    it('throws CartNotActiveError when cart is EXPIRED', () => {
       const { cartService, productsService, checkoutService } = makeServices();
       const product = productsService.create({
         name: 'Widget',
@@ -110,7 +110,7 @@ describe('CheckoutService', () => {
       cartService.addItem(cart.id, product.id, 1);
       cartService.expireCart(cart.id);
 
-      expect(() => checkoutService.checkout(cart.id)).toThrow(ConflictException);
+      expect(() => checkoutService.checkout(cart.id)).toThrow(CartNotActiveError);
     });
   });
 });

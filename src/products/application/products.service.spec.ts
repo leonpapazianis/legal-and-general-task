@@ -1,6 +1,10 @@
-import { NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { ProductInMemoryRepository } from '../infrastructure/persistence/product.in-memory.repository';
+import {
+  EntityNotFoundError,
+  StockUnavailableError,
+  InvariantViolationError,
+} from '../../shared/domain/domain.error';
 
 const makeService = () => new ProductsService(new ProductInMemoryRepository());
 
@@ -42,9 +46,9 @@ describe('ProductsService', () => {
   });
 
   describe('findById', () => {
-    it('throws NotFoundException for an unknown id', () => {
+    it('throws EntityNotFoundError for an unknown id', () => {
       const svc = makeService();
-      expect(() => svc.findById('unknown')).toThrow(NotFoundException);
+      expect(() => svc.findById('unknown')).toThrow(EntityNotFoundError);
     });
 
     it('includes availableStock in the response', () => {
@@ -62,15 +66,15 @@ describe('ProductsService', () => {
       expect(updated.name).toBe('Gadget');
     });
 
-    it('throws NotFoundException for an unknown id', () => {
+    it('throws EntityNotFoundError for an unknown id', () => {
       const svc = makeService();
-      expect(() => svc.update('unknown', { name: 'X' })).toThrow(NotFoundException);
+      expect(() => svc.update('unknown', { name: 'X' })).toThrow(EntityNotFoundError);
     });
 
     it('rejects setting price to zero', () => {
       const svc = makeService();
       const p = seed(svc);
-      expect(() => svc.update(p.id, { price: 0 })).toThrow(UnprocessableEntityException);
+      expect(() => svc.update(p.id, { price: 0 })).toThrow(InvariantViolationError);
     });
   });
 
@@ -79,12 +83,12 @@ describe('ProductsService', () => {
       const svc = makeService();
       const p = seed(svc);
       svc.delete(p.id);
-      expect(() => svc.findById(p.id)).toThrow(NotFoundException);
+      expect(() => svc.findById(p.id)).toThrow(EntityNotFoundError);
     });
 
-    it('throws NotFoundException for an unknown id', () => {
+    it('throws EntityNotFoundError for an unknown id', () => {
       const svc = makeService();
-      expect(() => svc.delete('unknown')).toThrow(NotFoundException);
+      expect(() => svc.delete('unknown')).toThrow(EntityNotFoundError);
     });
   });
 
@@ -96,10 +100,10 @@ describe('ProductsService', () => {
       expect(svc.findById(p.id).availableStock).toBe(7);
     });
 
-    it('throws UnprocessableEntityException when stock is insufficient', () => {
+    it('throws StockUnavailableError when stock is insufficient', () => {
       const svc = makeService();
       const p = seed(svc, { stock: 2 });
-      expect(() => svc.reserve(p.id, 5)).toThrow(UnprocessableEntityException);
+      expect(() => svc.reserve(p.id, 5)).toThrow(StockUnavailableError);
     });
   });
 

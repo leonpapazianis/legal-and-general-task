@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { DomainError } from '../../shared/domain/domain.error';
+import { CartNotActiveError, EntityNotFoundError } from '../../shared/domain/domain.error';
 
 export enum CartStatus {
   ACTIVE = 'ACTIVE',
@@ -51,7 +51,7 @@ export class Cart {
   updateItemQuantity(productId: string, quantity: number): number {
     this.assertActive();
     const item = this.items.find((i) => i.productId === productId);
-    if (!item) throw new DomainError(`Product '${productId}' not in cart`);
+    if (!item) throw new EntityNotFoundError(`Product '${productId}' not in cart`);
 
     const delta = quantity - item.quantity;
     if (quantity === 0) {
@@ -66,7 +66,7 @@ export class Cart {
   removeItem(productId: string): number {
     this.assertActive();
     const item = this.items.find((i) => i.productId === productId);
-    if (!item) throw new DomainError(`Product '${productId}' not in cart`);
+    if (!item) throw new EntityNotFoundError(`Product '${productId}' not in cart`);
     this.items = this.items.filter((i) => i.productId !== productId);
     this.lastActivityAt = new Date();
     return item.quantity;
@@ -96,10 +96,10 @@ export class Cart {
 
   private assertActive(): void {
     if (this.status === CartStatus.CHECKED_OUT) {
-      throw new DomainError('Cart has already been checked out');
+      throw new CartNotActiveError('Cart has already been checked out');
     }
     if (this.status === CartStatus.EXPIRED) {
-      throw new DomainError('Cart has expired — please create a new cart');
+      throw new CartNotActiveError('Cart has expired — please create a new cart');
     }
   }
 }

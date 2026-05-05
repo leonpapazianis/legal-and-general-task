@@ -1,4 +1,5 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { EntityNotFoundError } from '../../shared/domain/domain.error';
 import { Discount, CreateDiscountProps, UpdateDiscountProps } from '../domain/discount.entity';
 import type { IDiscountRepository } from '../domain/discount.repository.port';
 import { DISCOUNT_REPOSITORY } from '../domain/discount.repository.port';
@@ -22,7 +23,7 @@ export class DiscountsService {
 
   findById(id: string): Discount {
     const discount = this.repo.findById(id);
-    if (!discount) throw new NotFoundException(`Discount '${id}' not found`);
+    if (!discount) throw new EntityNotFoundError(`Discount '${id}' not found`);
     return discount;
   }
 
