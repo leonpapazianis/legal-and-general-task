@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { DiscountsModule } from '../src/discounts/discounts.module';
+import { DomainExceptionFilter } from '../src/shared/infrastructure/filters/domain-exception.filter';
 
 const createPctDiscount = (app: INestApplication, overrides = {}) =>
   request(app.getHttpServer())
@@ -23,6 +24,7 @@ describe('Discounts (e2e)', () => {
     }).compile();
 
     app = module.createNestApplication();
+    app.useGlobalFilters(new DomainExceptionFilter());
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
     );

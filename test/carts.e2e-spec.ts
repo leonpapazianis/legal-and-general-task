@@ -3,6 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { CartModule } from '../src/cart/cart.module';
 import { ProductsModule } from '../src/products/products.module';
+import { DomainExceptionFilter } from '../src/shared/infrastructure/filters/domain-exception.filter';
 
 const createProduct = (app: INestApplication, overrides = {}) =>
   request(app.getHttpServer())
@@ -20,6 +21,7 @@ describe('Carts (e2e)', () => {
     }).compile();
 
     app = module.createNestApplication();
+    app.useGlobalFilters(new DomainExceptionFilter());
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
     );
@@ -123,6 +125,37 @@ describe('Carts (e2e)', () => {
         .post(`/carts/${cart.body.data.id}/items`)
         .send({ productId: 'p1' });
       expect(res.status).toBe(400);
+    });
+
+    it('returns 409 when cart is already checked out', async () => {
+      const product = await createProduct(app);
+      const cart = await createCart(app);
+      const cartId = cart.body.data.id;
+      await request(app.getHttpServer())
+        .post(`/carts/${cartId}/items`)
+        .send({ productId: product.body.data.id, quantity: 1 });
+      await request(app.getHttpServer()).post(`/carts/${cartId}/checkout`).send();
+
+      const res = await request(app.getHttpServer())
+        .post(`/carts/${cartId}/items`)
+        .send({ productId: product.body.data.id, quantity: 1 });
+      expect(res.status).toBe(409);
+      expect(res.body.error).toBe('CartNotActiveError');
+    });
+
+    it('returns 422 when updating quantity exceeds available stock', async () => {
+      const product = await createProduct(app, { stock: 3 });
+      const cart = await createCart(app);
+      const cartId = cart.body.data.id;
+      await request(app.getHttpServer())
+        .post(`/carts/${cartId}/items`)
+        .send({ productId: product.body.data.id, quantity: 2 });
+
+      const res = await request(app.getHttpServer())
+        .patch(`/carts/${cartId}/items/${product.body.data.id}`)
+        .send({ quantity: 10 });
+      expect(res.status).toBe(422);
+      expect(res.body.error).toBe('StockUnavailableError');
     });
   });
 

@@ -4,6 +4,7 @@ import * as request from 'supertest';
 import { CartModule } from '../src/cart/cart.module';
 import { ProductsModule } from '../src/products/products.module';
 import { DiscountsModule } from '../src/discounts/discounts.module';
+import { DomainExceptionFilter } from '../src/shared/infrastructure/filters/domain-exception.filter';
 
 const createProduct = (app: INestApplication, overrides = {}) =>
   request(app.getHttpServer())
@@ -27,6 +28,7 @@ describe('Checkout (e2e)', () => {
     }).compile();
 
     app = module.createNestApplication();
+    app.useGlobalFilters(new DomainExceptionFilter());
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
     );
@@ -90,6 +92,13 @@ describe('Checkout (e2e)', () => {
 
     const res = await checkout(app, cart.body.data.id);
     expect(res.status).toBe(409);
+  });
+
+  it('returns 422 when cart is empty', async () => {
+    const cart = await createCart(app);
+    const res = await checkout(app, cart.body.data.id);
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('InvariantViolationError');
   });
 
   it('returns 404 for unknown cart', async () => {
