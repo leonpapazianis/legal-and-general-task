@@ -49,6 +49,11 @@ describe('Checkout (e2e)', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.cartId).toBe(cartId);
+    expect(res.body.data.items).toHaveLength(1);
+    expect(res.body.data.items[0].productId).toBe(productId);
+    expect(res.body.data.items[0].quantity).toBe(3);
+    expect(res.body.data.items[0].unitPrice).toBe(10);
+    expect(res.body.data.items[0].lineTotal).toBe(30);
     expect(res.body.data.subtotal).toBe(30);
     expect(res.body.data.total).toBe(30);
     expect(res.body._links.self.href).toMatch(/\/carts\//);

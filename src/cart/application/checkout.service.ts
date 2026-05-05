@@ -1,14 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { CartService } from './cart.service';
-import { CartStatus } from '../domain/cart.entity';
+import { CartStatus, CartItem } from '../domain/cart.entity';
 import { CartNotActiveError, InvariantViolationError } from '../../shared/domain/domain.error';
 import { ProductsService } from '../../products/application/products.service';
 import { DiscountsService } from '../../discounts/application/discounts.service';
 import { DiscountEngineService } from '../../discounts/domain/discount-engine.service';
 import { DiscountResult } from '../../discounts/domain/discount-result';
 
+export interface CheckoutLineItem extends CartItem {
+  lineTotal: number;
+}
+
 export interface CheckoutResult {
   cartId: string;
+  items: CheckoutLineItem[];
   subtotal: number;
   discounts: DiscountResult;
   total: number;
@@ -57,6 +62,10 @@ export class CheckoutService {
 
     return {
       cartId: cart.id,
+      items: cart.items.map((item) => ({
+        ...item,
+        lineTotal: parseFloat((item.quantity * item.unitPrice).toFixed(2)),
+      })),
       subtotal: discounts.subtotal,
       discounts,
       total: discounts.total,
