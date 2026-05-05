@@ -14,8 +14,8 @@
 ```bash
 npm install
 npm start          # starts on http://localhost:3000
-npm test           # unit tests
-npm run test:e2e   # E2E tests (supertest, no server needed)
+npm test           # unit tests   (135 tests)
+npm run test:e2e   # E2E tests    (45 tests, supertest — no server needed)
 ```
 
 Swagger UI is available at **http://localhost:3000/api**.
@@ -32,9 +32,9 @@ The system is organised as three concentric rings. Each ring may only depend on 
 
 | Ring | Contents | Framework dependency |
 |------|----------|----------------------|
-| **Domain Core** (inner) | `Cart`, `Product`, `Discount` aggregates; `IDiscountStrategy`; `DiscountEngineService`; `DomainError` | None — pure TypeScript |
+| **Domain Core** (inner) | `Cart`, `Product`, `Discount` aggregates; `IDiscountStrategy`; `DiscountEngineService`; `DomainError` hierarchy (`EntityNotFoundError`, `CartNotActiveError`, `StockUnavailableError`, `InvariantViolationError`) | None — pure TypeScript |
 | **Application** (middle) | `CartService`, `CheckoutService`, `CartExpiryService`, `ProductsService`, `DiscountsService` | NestJS `@Injectable` only |
-| **Infrastructure** (outer) | HTTP controllers, in-memory repositories, `CartExpiryScheduler`, NestJS modules | NestJS, Express, `@nestjs/schedule` |
+| **Infrastructure** (outer) | HTTP controllers, in-memory repositories, `DomainExceptionFilter`, `CartExpiryScheduler`, NestJS modules | NestJS, Express, `@nestjs/schedule` |
 
 Repository and strategy interfaces (ports) sit on the Domain/Application boundary. Concrete implementations (adapters) live in Infrastructure and are injected at runtime via NestJS DI tokens (`CART_REPOSITORY`, `DISCOUNT_STRATEGIES`, etc.).
 
@@ -46,11 +46,13 @@ Repository and strategy interfaces (ports) sit on the Domain/Application boundar
 
 Key relationships:
 
-- **Cart** owns a collection of `CartItem` value objects (composition). All mutations go through the `Cart` aggregate — the `addItem`, `updateItemQuantity`, and `removeItem` methods enforce invariants and update `lastActivityAt`.
-- **Product** manages its own stock lifecycle (`reserve` / `release` / `commit`) and exposes `availableStock` as a computed getter (`stock - reserved`).
+- **Cart** owns a collection of `CartItem` value objects (composition). All mutations go through the `Cart` aggregate — `addItem` enforces quantity > 0 and active-cart status before mutating; `updateItemQuantity` and `removeItem` throw `EntityNotFoundError` if the product is not in the cart. Every `getCart()` / `save()` call returns a deep clone so callers cannot accidentally corrupt stored state.
+- **Product** manages its own stock lifecycle (`reserve` / `release` / `commit` / `uncommit`). `availableStock` is a computed getter (`stock − reserved`). `update()` rejects stock values that would drop below the currently reserved quantity.
+- **DomainError hierarchy** — four typed subclasses replace the former catch-all, enabling `DomainExceptionFilter` to return the correct HTTP status code without any controller-level try/catch.
 - **IDiscountStrategy** is an interface with four concrete implementations. Each strategy declares its `type` and `level` (`product` or `cart`), allowing the engine to route discounts correctly.
 - **DiscountEngineService** holds a `Map<DiscountType, IDiscountStrategy>` and runs the two-pass calculation. It depends only on the strategy interface, never on concrete classes.
-- **CheckoutService** orchestrates across `CartService`, `ProductsService`, `DiscountsService`, and `DiscountEngineService` to complete a checkout atomically.
+- **CheckoutService** orchestrates across `CartService`, `ProductsService`, `DiscountsService`, and `DiscountEngineService`. It guards against empty-cart checkout and performs best-effort stock rollback via `uncommit()` if a commit loop fails midway.
+- **CartExpiryService** depends only on `CartService` (no direct repository injection). It delegates active-cart discovery to `CartService.findActiveCarts()`.
 
 ---
 
@@ -58,13 +60,13 @@ Key relationships:
 
 ![Sequence Diagrams](docs/sequence-diagrams.png)
 
-Three key flows are shown:
+**① Add Item to Cart** — `CartService` reserves stock before calling `cart.addItem()`. If the cart is inactive (`CartNotActiveError`), the reservation is immediately released and a 409 is returned. If stock is insufficient, the reservation throws before any cart mutation and a 422 is returned.
 
-**① Add Item to Cart** — A `POST /carts/:id/items` request flows through the controller to `CartService`, which first fetches the product's name and price, then calls `ProductsService.reserve()` to decrement `availableStock`. Only on success does it call `cart.addItem()` and persist. A 422 is returned immediately if stock is insufficient.
+**② Update Item Quantity** — `CartService` computes the delta and calls `ProductsService.reserve(delta)` *before* mutating the cart entity. A `StockUnavailableError` is therefore raised before the cart is touched, ensuring the cart and stock always agree.
 
-**② Checkout** — A `POST /carts/:id/checkout` request delegates to `CheckoutService`, which fetches all active discounts, runs the two-pass discount engine, then commits stock for each cart item (permanently decrementing `product.stock`). The cart status is set to `CHECKED_OUT` and a `CheckoutResult` with subtotal, discount breakdown, and final total is returned.
+**③ Checkout** — `CheckoutService` checks that the cart is ACTIVE *and* non-empty before proceeding. Stock is committed item by item. If any `commit()` fails (e.g. a product was deleted), all previously committed items are reversed via `uncommit()` before the error propagates. A 200 with subtotal, discount breakdown, and total is returned on success.
 
-**③ Cart Expiry (background)** — `CartExpiryScheduler` fires every 30 seconds via `@Interval`. `CartExpiryService.sweep()` loads all `ACTIVE` carts from the repository, filters those where `lastActivityAt` exceeds the 2-minute TTL, and calls `cartService.expireCart()` on each — releasing all stock reservations and marking the cart `EXPIRED`.
+**④ Cart Expiry Sweep** — `CartExpiryScheduler` fires every 30 s. `CartExpiryService.sweep()` calls `CartService.findActiveCarts()` (no direct repo access), filters expired carts, and calls `cartService.expireCart()` on each. Inside `expireCart`, `EntityNotFoundError` from a deleted product is silently skipped so the sweep always completes and the cart is always marked EXPIRED.
 
 ---
 
@@ -74,7 +76,7 @@ The solution follows **Onion Architecture** (Ports & Adapters) with three bounde
 
 | Context | Module | Responsibility |
 |---------|--------|----------------|
-| products | `ProductsModule` | Catalogue CRUD; stock lifecycle (reserve / release / commit) |
+| products | `ProductsModule` | Catalogue CRUD; stock lifecycle (reserve / release / commit / uncommit) |
 | discounts | `DiscountsModule` | Discount catalogue CRUD; strategy registry; discount engine |
 | cart | `CartModule` | Shopping cart CRUD; checkout orchestration; expiry sweep |
 
@@ -82,15 +84,46 @@ The solution follows **Onion Architecture** (Ports & Adapters) with three bounde
 
 ## Design decisions
 
+### Repository isolation via entity cloning
+
+Every in-memory repository clones entities on read and write (`Object.create(Prototype) + Object.assign` to preserve prototype chains). This means the "rollback by not saving" strategy is reliable — if a service operation fails after fetching an entity, the stored state is never corrupted because the fetched object is always an independent copy.
+
+### Typed DomainError hierarchy
+
+`DomainError` is the base class. Four subclasses carry semantic meaning:
+
+| Class | Meaning | HTTP |
+|-------|---------|------|
+| `EntityNotFoundError` | Aggregate not found by ID | 404 |
+| `CartNotActiveError` | Cart is CHECKED_OUT or EXPIRED | 409 |
+| `StockUnavailableError` | Insufficient available stock | 422 |
+| `InvariantViolationError` | Business rule broken | 422 |
+
+`DomainExceptionFilter` (registered via `APP_FILTER` in `AppModule`) maps each subclass to its HTTP status. Services and entities throw; controllers never catch.
+
 ### Stock reservation model
 
 Stock transitions through three states: `available → reserved → committed`.
 
-- `addItem` / `updateItemQuantity` / `removeItem` → `product.reserve()` / `product.release()`
-- `checkout` → `product.commit()` (decrements both `stock` and `reserved`)
-- `expireCart` → `product.release()` for every item
+- `addItem` / `updateItemQuantity` → `product.reserve(delta)`
+- `removeItem` / `expireCart` → `product.release(qty)`
+- `checkout` → `product.commit(qty)` (decrements both `stock` and `reserved`)
+- Checkout rollback → `product.uncommit(qty)` (reinstates `stock` only)
 
 This prevents overselling without requiring pessimistic locking.
+
+### Checkout safety
+
+`CheckoutService.checkout()` applies two guards before touching stock:
+
+1. Cart must be `ACTIVE` → `CartNotActiveError` (409)
+2. Cart must have at least one item → `InvariantViolationError` (422)
+
+On partial commit failure, already-committed items are reversed via `uncommit()` (best-effort — individual rollback failures are silently ignored).
+
+### Cart expiry resilience
+
+`CartExpiryService.expireCart()` wraps each `product.release()` in a try/catch. `EntityNotFoundError` (product deleted since item was added) is silently skipped. Any other error still propagates. This ensures the expiry sweep always terminates and every eligible cart is marked `EXPIRED`.
 
 ### Discount engine (two-pass)
 
@@ -108,11 +141,7 @@ Every resource response is wrapped in `{ data: T, _links: Record<string, HalLink
 
 ### Testing strategy
 
-Tests verify **observable behaviour** (state, return values, thrown exceptions) — never mock call sequences. Application-service tests use real in-memory repositories so they exercise the full use-case without coupling to implementation details. This makes them resilient to refactoring.
-
-### Cart expiry
-
-`CartExpiryScheduler` fires every 30 seconds via `@Interval(30_000)`. `CartExpiryService.sweep()` finds all ACTIVE carts, filters those where `lastActivityAt` is older than 120 seconds, and calls `cartService.expireCart()` on each — releasing all stock reservations and marking the cart EXPIRED.
+Tests verify **observable behaviour** (state, return values, thrown exceptions) — never mock call sequences. Application-service tests use real in-memory repositories so they exercise the full use-case without coupling to implementation details. E2E tests wire the `DomainExceptionFilter` via `app.useGlobalFilters()` and assert the precise HTTP status *and* `error` name in the response body.
 
 ---
 
@@ -121,4 +150,4 @@ Tests verify **observable behaviour** (state, return values, thrown exceptions) 
 - **Persistence**: in-memory only (data is lost on restart). Production would swap `*InMemoryRepository` for database-backed implementations without touching domain or application code.
 - **Authentication / multi-tenancy**: out of scope; all carts and products are globally shared.
 - **Currency**: all prices are stored and returned as JavaScript `number` (float). `toFixed(2)` is applied at subtotal/total boundaries. A production system would use integer cents or a `Decimal` library.
-- **Discount `config` validation**: the DTO accepts a plain object (`@IsObject()`). Deep structural validation per discount type is enforced in `Discount.create()` at the domain layer.
+- **Discount `config` validation**: the DTO accepts a plain object (`@IsObject()`). Deep structural validation per discount type is enforced in `Discount.create()` at the domain layer via `InvariantViolationError`.
