@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { CartStatus } from '../domain/cart.entity';
-import { CartNotActiveError } from '../../shared/domain/domain.error';
+import { CartNotActiveError, InvariantViolationError } from '../../shared/domain/domain.error';
 import { ProductsService } from '../../products/application/products.service';
 import { DiscountsService } from '../../discounts/application/discounts.service';
 import { DiscountEngineService } from '../../discounts/domain/discount-engine.service';
@@ -28,12 +28,28 @@ export class CheckoutService {
     if (cart.status !== CartStatus.ACTIVE) {
       throw new CartNotActiveError('Cart is not active');
     }
+    if (cart.items.length === 0) {
+      throw new InvariantViolationError('Cannot checkout an empty cart');
+    }
 
     const activeDiscounts = this.discountsService.findAllActive();
     const discounts = this.discountEngine.calculate(cart.items, activeDiscounts);
 
-    for (const item of cart.items) {
-      this.productsService.commit(item.productId, item.quantity);
+    const committed: Array<{ productId: string; quantity: number }> = [];
+    try {
+      for (const item of cart.items) {
+        this.productsService.commit(item.productId, item.quantity);
+        committed.push({ productId: item.productId, quantity: item.quantity });
+      }
+    } catch (err) {
+      for (const { productId, quantity } of committed) {
+        try {
+          this.productsService.uncommit(productId, quantity);
+        } catch {
+          // best-effort: ignore rollback failures
+        }
+      }
+      throw err;
     }
 
     cart.markCheckedOut();

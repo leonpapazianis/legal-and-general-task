@@ -37,10 +37,20 @@ export class CartService {
 
   updateItemQuantity(cartId: string, productId: string, quantity: number): Cart {
     const cart = this.getCart(cartId);
-    const delta = cart.updateItemQuantity(productId, quantity);
+    const item = cart.items.find((i) => i.productId === productId);
+    if (!item) throw new EntityNotFoundError(`Product '${productId}' not in cart`);
+
+    const delta = quantity - item.quantity;
     if (delta > 0) {
       this.productsService.reserve(productId, delta);
-    } else if (delta < 0) {
+    }
+    try {
+      cart.updateItemQuantity(productId, quantity);
+    } catch (err) {
+      if (delta > 0) this.productsService.release(productId, delta);
+      throw err;
+    }
+    if (delta < 0) {
       this.productsService.release(productId, -delta);
     }
     return this.repo.save(cart);
@@ -60,7 +70,11 @@ export class CartService {
   expireCart(cartId: string): Cart {
     const cart = this.getCart(cartId);
     for (const item of cart.items) {
-      this.productsService.release(item.productId, item.quantity);
+      try {
+        this.productsService.release(item.productId, item.quantity);
+      } catch (err) {
+        if (!(err instanceof EntityNotFoundError)) throw err;
+      }
     }
     cart.markExpired();
     return this.repo.save(cart);

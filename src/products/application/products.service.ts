@@ -51,4 +51,10 @@ export class ProductsService {
     product.commit(quantity);
     this.repo.save(product);
   }
+
+  uncommit(id: string, quantity: number): void {
+    const product = this.findById(id);
+    product.uncommit(quantity);
+    this.repo.save(product);
+  }
 }

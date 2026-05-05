@@ -76,6 +76,11 @@ export class Product {
     this.updatedAt = new Date();
   }
 
+  uncommit(quantity: number): void {
+    this.stock += quantity;
+    this.updatedAt = new Date();
+  }
+
   update(props: UpdateProductProps): void {
     if (props.price !== undefined && props.price <= 0) {
       throw new InvariantViolationError('Product price must be greater than zero');

@@ -91,6 +91,20 @@ describe('CartService', () => {
       cartService.persistCart(liveCart);
       expect(() => cartService.addItem(cart.id, product.id, 1)).toThrow(CartNotActiveError);
     });
+
+    it('does not consume stock when addItem fails due to inactive cart', () => {
+      const { cartService, productsService } = makeServices();
+      const product = seedProduct(productsService, 10);
+      const cart = cartService.createCart();
+      cartService.addItem(cart.id, product.id, 3);
+      const liveCart = cartService.getCart(cart.id);
+      liveCart.markCheckedOut();
+      cartService.persistCart(liveCart);
+
+      expect(() => cartService.addItem(cart.id, product.id, 5)).toThrow(CartNotActiveError);
+
+      expect(productsService.findById(product.id).availableStock).toBe(7);
+    });
   });
 
   describe('updateItemQuantity', () => {
@@ -137,6 +151,20 @@ describe('CartService', () => {
         EntityNotFoundError,
       );
     });
+
+    it('does not mutate cart quantity when stock increase is unavailable', () => {
+      const { cartService, productsService } = makeServices();
+      const product = seedProduct(productsService, 5);
+      const cart = cartService.createCart();
+      cartService.addItem(cart.id, product.id, 2);
+
+      expect(() => cartService.updateItemQuantity(cart.id, product.id, 10)).toThrow(
+        StockUnavailableError,
+      );
+
+      expect(cartService.getCart(cart.id).items[0].quantity).toBe(2);
+      expect(productsService.findById(product.id).availableStock).toBe(3);
+    });
   });
 
   describe('removeItem', () => {
@@ -170,6 +198,17 @@ describe('CartService', () => {
 
       expect(cartService.getCart(cart.id).status).toBe(CartStatus.EXPIRED);
       expect(productsService.findById(product.id).availableStock).toBe(10);
+    });
+
+    it('expires the cart even when a product in the cart has been deleted', () => {
+      const { cartService, productsService } = makeServices();
+      const product = seedProduct(productsService, 10);
+      const cart = cartService.createCart();
+      cartService.addItem(cart.id, product.id, 4);
+      productsService.delete(product.id);
+
+      expect(() => cartService.expireCart(cart.id)).not.toThrow();
+      expect(cartService.getCart(cart.id).status).toBe(CartStatus.EXPIRED);
     });
   });
 });

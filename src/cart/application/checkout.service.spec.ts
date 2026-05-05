@@ -7,7 +7,7 @@ import { DiscountEngineService } from '../../discounts/domain/discount-engine.se
 import { DiscountsService } from '../../discounts/application/discounts.service';
 import { DiscountInMemoryRepository } from '../../discounts/infrastructure/persistence/discount.in-memory.repository';
 import { CartStatus } from '../domain/cart.entity';
-import { CartNotActiveError } from '../../shared/domain/domain.error';
+import { CartNotActiveError, InvariantViolationError } from '../../shared/domain/domain.error';
 import { PercentageOffProductStrategy } from '../../discounts/domain/strategies/percentage-off-product.strategy';
 import { FixedAmountOffProductStrategy } from '../../discounts/domain/strategies/fixed-amount-off-product.strategy';
 import { BuyXGetYFreeStrategy } from '../../discounts/domain/strategies/buy-x-get-y-free.strategy';
@@ -111,6 +111,29 @@ describe('CheckoutService', () => {
       cartService.expireCart(cart.id);
 
       expect(() => checkoutService.checkout(cart.id)).toThrow(CartNotActiveError);
+    });
+
+    it('throws InvariantViolationError when cart is empty', () => {
+      const { cartService, checkoutService } = makeServices();
+      const cart = cartService.createCart();
+
+      expect(() => checkoutService.checkout(cart.id)).toThrow(InvariantViolationError);
+    });
+
+    it('rolls back committed stock when a later commit fails', () => {
+      const { cartService, productsService, checkoutService } = makeServices();
+      const p1 = productsService.create({ name: 'Widget', description: '', price: 10, stock: 5 });
+      const p2 = productsService.create({ name: 'Gadget', description: '', price: 5, stock: 3 });
+      const cart = cartService.createCart();
+      cartService.addItem(cart.id, p1.id, 2);
+      cartService.addItem(cart.id, p2.id, 1);
+
+      productsService.delete(p2.id);
+
+      expect(() => checkoutService.checkout(cart.id)).toThrow();
+
+      expect(cartService.getCart(cart.id).status).toBe(CartStatus.ACTIVE);
+      expect(productsService.findById(p1.id).stock).toBe(5);
     });
   });
 });
